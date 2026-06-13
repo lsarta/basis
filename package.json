@@ -10,6 +10,7 @@
     "export-session": "node scripts/export-session.mjs",
     "scrape:replay": "node --env-file-if-exists=.env src/loop/scrape/replay.ts",
     "scrape:dryrun": "node --env-file-if-exists=.env src/loop/scrape/dryrun.ts",
-    "scrape:census": "node --env-file-if-exists=.env src/loop/scrape/census.ts"
+    "scrape:census": "node --env-file-if-exists=.env src/loop/scrape/census.ts",
+    "engine:demo-pair": "node --env-file-if-exists=.env src/loop/engine/demo-pair.ts"
   }
 }
