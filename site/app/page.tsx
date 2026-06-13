@@ -1,4 +1,5 @@
 import { Reveal } from "./reveal";
+import { Waterfall } from "./waterfall";
 import { HERO, CEMA, GATE, COHORTS, usdM1, usdM2, usdK } from "./data";
 
 const pct = (n: number, d = 0) => (n * 100).toFixed(d) + "%";
@@ -52,7 +53,6 @@ export default function Page() {
 }
 
 function HeroScroll() {
-  const maxAbs = Math.max(...HERO.forces.map((f) => Math.abs(f.value)));
   const e = HERO.entry;
   const x = HERO.exit;
   return (
@@ -97,25 +97,7 @@ function HeroScroll() {
         </Reveal>
 
         <Reveal>
-          <div className="forces">
-            {HERO.forces.map((f) => {
-              const w = (Math.abs(f.value) / maxAbs) * 50;
-              const pos = f.value >= 0;
-              return (
-                <div className="force" key={f.label}>
-                  <div className="flabel">
-                    {f.label}
-                    <small>{f.sub}</small>
-                  </div>
-                  <div className="bar-wrap">
-                    <span className="bar-axis" />
-                    <span className={`bar ${pos ? "pos" : "neg"}`} style={{ width: `${w}%` }} />
-                  </div>
-                  <div className={`fval ${pos ? "pos" : "neg"}`}>{usdM2(f.value)}</div>
-                </div>
-              );
-            })}
-          </div>
+          <Waterfall />
         </Reveal>
 
         <Reveal>
