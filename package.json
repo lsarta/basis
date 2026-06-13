@@ -1,0 +1,11 @@
+{
+  "name": "basis",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Basis — a CRE valuation model that learns from public records.",
+  "scripts": {
+    "grader:selftest": "node src/grader/selftest.ts",
+    "test": "node --test"
+  }
+}
