@@ -7,6 +7,8 @@
   "scripts": {
     "grader:selftest": "node src/grader/selftest.ts",
     "test": "node --test",
-    "export-session": "node scripts/export-session.mjs"
+    "export-session": "node scripts/export-session.mjs",
+    "scrape:replay": "node --env-file-if-exists=.env src/loop/scrape/replay.ts",
+    "scrape:dryrun": "node --env-file-if-exists=.env src/loop/scrape/dryrun.ts"
   }
 }

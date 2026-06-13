@@ -8,6 +8,8 @@ Basis reuses one substantial piece of code the author built prior to this event:
 
 The author's prior NYC-research Python (an ACRIS deed↔mortgage join with CEMA detection) informs the **method** of the scrape built today, but is **not** part of this repo — it lives in a separate private research project and contains research-surface material (survivor analysis, corpus sweeps, the gold-set labeling pipeline) that is not public-record-derivable code. The Basis ACRIS scrape, CEMA recovery, gold-set grader, loop, API, and UI are **built during Build Day in TypeScript**, in `src/grader`, `src/loop`, `src/api`, `src/ui`.
 
+Specifically: the CEMA recovery **algorithm** (select the most-recent consolidation in the active chain) derives from the author's prior Python research; the **TypeScript implementation, the bug-fix over the prior code's max-amount selection** (the prior reference picks the largest consolidation, which only coincidentally lands on the live senior — Basis selects by recency in a satisfaction-aware active chain), **and the integration into the gold-set gate are Build Day work.**
+
 These are brought in as components, consistent with the event rule that prior work may be reused if clearly identified. **The Basis system — the scrape→decompose→test→improve loop, the self-improving harness, the API, and the UI — is built during Build Day.**
 
 ## Repo structure IS the provenance boundary
