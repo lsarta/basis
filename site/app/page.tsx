@@ -1,5 +1,5 @@
 import { Reveal } from "./reveal";
-import { HERO, CEMA, GATE, COHORTS, usdM } from "./data";
+import { HERO, CEMA, GATE, COHORTS, usdM1, usdM2, usdK } from "./data";
 
 const pct = (n: number, d = 0) => (n * 100).toFixed(d) + "%";
 
@@ -69,7 +69,7 @@ function HeroScroll() {
         <Reveal>
           <p className="lede">
             {HERO.address} sold in {e.date.slice(0, 4)}, then again {x.date.slice(0, 4)} —
-            a {usdM(HERO.deltaP)} move over {HERO.holdYears} years. The engine prices each
+            a {usdM2(HERO.deltaP)} move over {HERO.holdYears} years. The engine prices each
             deed by the buyer&rsquo;s own return logic, with the real CEMA-recovered loan,
             then attributes the move across the three forces. They sum back to the price
             move exactly.
@@ -82,6 +82,17 @@ function HeroScroll() {
               noiNote={e.noiNote} rate={e.baseRate} debt={e.debtCost} rho={e.rho} />
             <StateCard tag="Exit" date={x.date} price={x.price} ltv={x.ltv} noi={x.noi}
               noiNote={x.noiNote} rate={x.baseRate} debt={x.debtCost} rho={x.rho} />
+          </div>
+        </Reveal>
+
+        <Reveal>
+          <div className="move-strip">
+            <span className="mp">{usdM1(e.price)}</span>
+            <span className="ma">→</span>
+            <span className="mp">{usdM1(x.price)}</span>
+            <span className="meq">=</span>
+            <span className="mv">{usdM2(HERO.deltaP)}</span>
+            <span className="ml">price move · {HERO.holdYears}-yr hold</span>
           </div>
         </Reveal>
 
@@ -100,7 +111,7 @@ function HeroScroll() {
                     <span className="bar-axis" />
                     <span className={`bar ${pos ? "pos" : "neg"}`} style={{ width: `${w}%` }} />
                   </div>
-                  <div className={`fval ${pos ? "pos" : "neg"}`}>{usdM(f.value)}</div>
+                  <div className={`fval ${pos ? "pos" : "neg"}`}>{usdM2(f.value)}</div>
                 </div>
               );
             })}
@@ -109,21 +120,28 @@ function HeroScroll() {
 
         <Reveal>
           <div className="equation">
-            <span className="num">{usdM(HERO.forces[0].value)}</span>
+            <span className="num">{usdM2(HERO.forces[0].value)}</span>
             <span className="op">+</span>
-            <span className="num">{usdM(HERO.forces[1].value)}</span>
+            <span className="num">{usdM2(HERO.forces[1].value)}</span>
             <span className="op">−</span>
-            <span className="num">{usdM(Math.abs(HERO.forces[2].value))}</span>
+            <span className="num">{usdM2(Math.abs(HERO.forces[2].value))}</span>
             <span className="op">=</span>
-            <span className="sum num">{usdM(HERO.deltaP)}</span>
+            <span className="sum num">{usdM2(HERO.deltaP)}</span>
             <span className="foot">foots to the dollar · err {HERO.footError}</span>
           </div>
         </Reveal>
         <Reveal>
-          <p className="kicker" style={{ marginTop: "1.2rem" }}>
-            The cap rate would show one number. The decomposition shows fundamentals
-            actually <em>pushed price up</em> {usdM(HERO.forces[0].value)}, and a collapse in
-            what equity would pay — required return — pulled it down {usdM(Math.abs(HERO.forces[2].value))}.
+          <p className="kicker" style={{ marginTop: "1.4rem" }}>
+            The verified result is the footing: the three forces reproduce the{" "}
+            {usdM2(HERO.deltaP)} move to the dollar — that&rsquo;s the proof the wiring is
+            right. Their split is what the engine&rsquo;s return logic <em>attributes</em>,
+            not a clean economic measurement: here it reads fundamentals pushing price up{" "}
+            {usdM2(HERO.forces[0].value)} while the required-return leg absorbs the rest.
+            Debt lands slightly positive ({usdM2(HERO.forces[1].value)}) even as base rates
+            rose, because the deal <em>deleveraged</em> — LTV fell {pct(HERO.entry.ltv, 1)} →{" "}
+            {pct(HERO.exit.ltv, 1)} over the hold. Read the required-return leg as
+            illustrative: the entry ρ leans on a convexity proxy that overpenalizes high
+            leverage.
           </p>
         </Reveal>
       </div>
@@ -141,18 +159,18 @@ function StateCard({ tag, date, price, ltv, noi, noiNote, rate, debt, rho }: {
         <span className="tag">{tag}</span>
         <span className="date">{date}</span>
       </div>
-      <div className="price">{usdM(price)}</div>
+      <div className="price">{usdM1(price)}</div>
       <dl>
         <dt>LTV</dt>
         <dd>{pct(ltv, 1)} <small>CEMA-recovered</small></dd>
         <dt>NOI</dt>
-        <dd>{(noi / 1000).toFixed(0)}k <small>{noiNote}</small></dd>
+        <dd>{usdK(noi)} <small>{noiNote}</small></dd>
         <dt>Base rate</dt>
-        <dd>{pct(rate, 2)} <small>10y UST</small></dd>
+        <dd>{pct(rate, 1)} <small>10y UST</small></dd>
         <dt>Debt cost</dt>
-        <dd>{pct(debt, 2)}</dd>
+        <dd>{pct(debt, 1)}</dd>
         <dt>Required return ρ</dt>
-        <dd>{pct(rho, 2)}</dd>
+        <dd>{pct(rho, 2)} <small>engine output</small></dd>
       </dl>
     </div>
   );
@@ -174,8 +192,8 @@ function CemaScroll() {
           <p className="lede">
             To dodge NYC&rsquo;s mortgage-recording tax, most large loans are CEMAs: the
             recorded &ldquo;mortgage&rdquo; is a tiny gap note, and the real consolidated
-            balance hides in a separate agreement — sometimes beside a stale older one.
-            A naive read of {CEMA.address} sees no real debt at all.
+            balance hides in a separate consolidation agreement (an M&amp;CON) — sometimes
+            beside a stale older one. A naive read of {CEMA.address} sees no real debt at all.
           </p>
         </Reveal>
 
@@ -189,7 +207,7 @@ function CemaScroll() {
             <div className="arrow">→</div>
             <div className="read found">
               <div className="lbl">Engine recovers</div>
-              <div className="big">{usdM(CEMA.recovered)}</div>
+              <div className="big">{usdM1(CEMA.recovered)}</div>
               <div className="note" style={{ color: "#c9c6bd" }}>
                 {CEMA.recoveredVia} — {CEMA.recoveredNote}
               </div>
@@ -199,10 +217,10 @@ function CemaScroll() {
 
         <Reveal>
           <p className="cema-mult">
-            On the {usdM(CEMA.deedPrice)} purchase, that&rsquo;s a real{" "}
-            <b>{pct(CEMA.impliedLtv)} LTV</b> senior — not all-cash. The parcel also carries a
-            stale 2007 <b>{usdM(CEMA.staleAmount)}</b> consolidation; the engine selects the{" "}
-            most-recent <em>active-chain</em> instrument, {usdM(CEMA.recovered)}, and reads it
+            On the {usdM1(CEMA.deedPrice)} purchase, that&rsquo;s a real{" "}
+            <b>{pct(CEMA.impliedLtv, 1)} LTV</b> senior — not all-cash. The parcel also carries
+            a stale 2007 <b>{usdM1(CEMA.staleAmount)}</b> M&amp;CON; the engine selects the{" "}
+            most-recent <em>active-chain</em> instrument, {usdM1(CEMA.recovered)}, and reads it
             from {CEMA.source}.
           </p>
         </Reveal>

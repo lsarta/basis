@@ -144,8 +144,25 @@ footer {
 .card dl { margin: 1rem 0 0; display: grid; grid-template-columns: auto 1fr; gap: 0.35rem 1rem; font-size: 0.9rem; }
 .card dt { color: var(--ink-faint); }
 .scroll.dark .card dt { color: #8a877f; }
-.card dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
-.card dd small { color: var(--ink-faint); font-variant-numeric: normal; }
+.card dl { row-gap: 0.7rem; }
+.card dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; line-height: 1.25; }
+.card dd small { display: block; color: var(--ink-faint); font-variant-numeric: normal; font-size: 0.74rem; letter-spacing: 0.01em; margin-top: 0.05rem; }
+.scroll.dark .card dd small { color: #8a877f; }
+
+/* entry → exit = move reconciliation strip (the hero arithmetic, made unmissable) */
+.move-strip {
+  margin-top: 1.8rem; padding: 1rem 1.3rem;
+  border: 1px solid var(--rule); border-radius: 4px; background: rgba(255,255,255,0.4);
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem 1rem;
+  font-family: var(--serif); font-size: clamp(1.4rem, 3.4vw, 2.1rem); letter-spacing: -0.02em;
+}
+.move-strip .mp, .move-strip .mv { font-variant-numeric: tabular-nums; }
+.move-strip .ma, .move-strip .meq { color: var(--ink-faint); }
+.move-strip .mv { color: var(--neg); }
+.move-strip .ml {
+  font-family: var(--sans); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--ink-faint); margin-left: auto; align-self: center;
+}
 
 /* force decomposition rows + magnitude bars */
 .forces { margin-top: 2.2rem; display: grid; gap: 0.9rem; }

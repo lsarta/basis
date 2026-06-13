@@ -28,6 +28,12 @@ export const metadata: Metadata = {
     siteName: "Basis",
     type: "website",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Basis — a cap rate is three forces wearing one number",
+    description:
+      "Decomposing CRE price moves into debt cost, income, and required return, from NYC public records.",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

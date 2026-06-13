@@ -5,18 +5,24 @@
 //   LOOP  → `npm run engine:headline`   (survival waterfall + model-implied relative force mix)
 // Captured 2026-06-13 on the cached corpus (151/194 same-BBL pairs; SODA was 503-throttled).
 
-export const usd = (n: number, frac = false) =>
-  (n < 0 ? "-$" : "$") +
-  Math.abs(n).toLocaleString("en-US", {
-    maximumFractionDigits: frac ? 0 : 0,
-  });
+// Use a true minus sign (−, U+2212) for negatives — reads cleaner than a hyphen in financials.
+const sign = (n: number) => (n < 0 ? "−$" : "$");
 
-export const usdM = (n: number) =>
-  (n < 0 ? "-$" : "$") + (Math.abs(n) / 1_000_000).toFixed(Math.abs(n) >= 1e7 ? 0 : 2) + "M";
+// Round half-up on the magnitude using exact integer scaling — toFixed() rounds the wrong
+// way on binary-inexact values (e.g. 14.45 → "14.4"), which would break the hero reconciliation.
+// $X.XM — one decimal, for price magnitudes (entry/exit, deed, recovered senior).
+export const usdM1 = (n: number) => sign(n) + (Math.round(Math.abs(n) / 1e5) / 10).toFixed(1) + "M";
+
+// $X.XXM — two decimals, for the reconciling force legs + the equation strip (must foot).
+export const usdM2 = (n: number) => sign(n) + (Math.round(Math.abs(n) / 1e4) / 100).toFixed(2) + "M";
+
+// $XXXK / $X,XXXK — thousands, comma-grouped (NOI and other sub-million figures).
+export const usdK = (n: number) =>
+  sign(n) + Math.round(Math.abs(n) / 1000).toLocaleString("en-US") + "K";
 
 // ── HERO: 118 2 Avenue — the exact calibrated decomposition (foots to the dollar) ──
 export const HERO = {
-  address: "118 2 Avenue",
+  address: "118 2nd Avenue",
   bbl: "1004490001",
   cohorts: "pre-2020 → higher-for-longer",
   holdYears: 7.6,
@@ -64,7 +70,7 @@ export const CEMA = {
   recoveredVia: "M&CON · doc 2025121200273005",
   recoveredNote: "the most-recent instrument in the active consolidation chain",
   impliedLtv: 190_000_000 / 218_600_000,
-  source: "read from the SODA document_amt field — metadata, not OCR",
+  source: "the SODA document_amt field — metadata, not OCR",
 };
 
 // ── THE LOOP: gold-set gate + survival waterfall per rate-vintage exit cohort ──
