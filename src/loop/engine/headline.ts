@@ -111,25 +111,36 @@ async function main(): Promise<void> {
     const s5: Record<string, number> = { rate: mean(bk.rels.map((r) => r.shares5.rate)), spread: mean(bk.rels.map((r) => r.shares5.spread)), ltv: mean(bk.rels.map((r) => r.shares5.ltv_availability)), noi: mean(bk.rels.map((r) => r.shares5.fundamentals)), rr: mean(bk.rels.map((r) => r.shares5.required_return)) };
     console.log(`  ${DIM}5-leg detail   signed $:        rate ${col(d5.rate)} spread ${col(d5.spread)} ltv-avail ${col(d5.ltv)} NOI ${col(d5.noi)} req-ret-resid ${col(d5.rr)}${X}`);
     console.log(`  ${DIM}               magnitude share: rate ${padL(pctShare(s5.rate), 4)}  spread ${padL(pctShare(s5.spread), 4)}  ltv-avail ${padL(pctShare(s5.ltv), 4)}  NOI ${padL(pctShare(s5.noi), 4)}  req-ret-resid ${padL(pctShare(s5.rr), 4)}  (sign above)${X}`);
+
+    // leveraged subset (correction #2: report separately) — where the rate force is non-zero.
+    const lev = bk.rels.filter((r) => r.leveraged);
+    if (lev.length) {
+      const lvRate = mean(lev.map((r) => r.shares5.rate)), lvLtv = mean(lev.map((r) => r.shares5.ltv_availability)), lvNoi = mean(lev.map((r) => r.shares5.fundamentals)), lvRr = mean(lev.map((r) => r.shares5.required_return));
+      console.log(`  ${DIM}leveraged subset (n=${lev.length}) magnitude share: rate ${padL(pctShare(lvRate), 4)}  ltv-avail ${padL(pctShare(lvLtv), 4)}  NOI ${padL(pctShare(lvNoi), 4)}  req-ret-resid ${padL(pctShare(lvRr), 4)}${X}`);
+    }
   }
 
-  // ── regime claim, rate-force-led (honest) ──
+  // ── regime claim — RATE force only (the clean, proxy-free leg) on the LEVERAGED subset ──
+  // (The 3-force debt rollup is muddied by LTV-availability/deleveraging; the rate sub-leg is the
+  // real signal, and it is non-zero only where there is recorded debt.)
   console.log("\n" + rule());
-  const hfl = buckets.get("higher-for-longer")!, pre = buckets.get("pre-2020")!;
-  const rateShare = (bk: Bucket) => mean(bk.rels.map((r) => r.shares3.debt)); // debt ≈ rate (spread 0) — the regime leg
-  const noiShare = (bk: Bucket) => mean(bk.rels.map((r) => r.shares3.noi));
-  console.log(`  ${B}REGIME CLAIM (rate-force-led, model-implied)${X}`);
-  if (hfl.rels.length >= 5 && pre.rels.length >= 5) {
-    console.log(`    HFL-exit   (n=${hfl.rels.length}): debt/rate magnitude share ${C}${pctShare(rateShare(hfl))}${X}   NOI share ${pctShare(noiShare(hfl))}   ${DIM}median hold ${medHold(hfl)}yr${X}`);
-    console.log(`    pre-2020-exit (n=${pre.rels.length}): debt/rate magnitude share ${pctShare(rateShare(pre))}   NOI share ${C}${pctShare(noiShare(pre))}${X}   ${DIM}median hold ${medHold(pre)}yr${X}`);
-    const holds = rateShare(hfl) > rateShare(pre) && noiShare(pre) >= noiShare(hfl);
-    console.log(holds
-      ? `  ${G}${B}✓ rate force is a larger share of HFL-exit moves than pre-2020-exit; NOI/fundamentals larger in pre-2020-exit.${X}`
-      : `  ${Y}force-mix contrast NOT clean on this run — fall back to the exact-footing single-pair demo (demo-pair) + survival story (BUILD_PLAN floor).${X}`);
-  } else {
-    console.log(`  ${Y}One contrast bucket has <5 DATA survivors — do NOT claim the cohort headline. Fall back to demo-pair (exact calibrated decomposition, foots to the dollar) + this survival waterfall.${X}`);
+  const levRate = (bk: Bucket) => { const l = bk.rels.filter((r) => r.leveraged); return { n: l.length, share: mean(l.map((r) => r.shares5.rate)) }; };
+  console.log(`  ${B}RATE-FORCE REGIME SIGNAL (model-implied; leveraged subset; the clean proxy-free leg)${X}`);
+  for (const c of COHORTS) {
+    const lr = levRate(buckets.get(c)!);
+    const hi = c === "higher-for-longer" ? C : DIM;
+    console.log(`    ${hi}${pad(c, 20)}${X} ${DIM}(leveraged n=${lr.n})${X}  rate-force magnitude share ${hi}${padL(pctShare(lr.share), 4)}${X}`);
   }
-  console.log(`  ${DIM}required-return-residual is descriptive (absorbs NOI-proxy bias), never the headline signal.${X}`);
+  const hfl = levRate(buckets.get("higher-for-longer")!), pre = levRate(buckets.get("pre-2020")!);
+  const directional = hfl.n >= 5 && pre.n >= 5 && hfl.share > pre.share;
+  console.log(directional
+    ? `  ${G}rate force is DIRECTIONALLY regime-ordered — a larger share of HFL-exit moves (${pctShare(hfl.share)}) than pre-2020-exit (${pctShare(pre.share)}).${X}`
+    : `  ${Y}rate-force ordering not clean on this run.${X}`);
+  console.log(`  ${Y}${B}BUT the rate force is a MINORITY leg${X} — the required-return RESIDUAL (proxy catch-all) and the hold-length-driven`);
+  console.log(`  ${Y}NOI proxy dominate the magnitude. Do NOT claim "rate force dominates."${X}`);
+  console.log(`  ${B}→ LEAD with demo-pair (the exact calibrated decomposition that foots to the dollar) + this survival waterfall;${X}`);
+  console.log(`  ${B}  present the rate-force ordering as a directionally-consistent but weak supporting signal (BUILD_PLAN floor).${X}`);
+  console.log(`  ${DIM}required-return-residual is descriptive (absorbs NOI-proxy bias under the crude cap proxy), never the headline signal.${X}`);
 }
 
 function medHold(bk: Bucket): string {

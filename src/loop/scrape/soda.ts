@@ -10,7 +10,8 @@ import type { SodaRow } from "./types.ts";
 
 const BASE = "https://data.cityofnewyork.us/resource";
 const PAGE = 1000;
-const TIMEOUT_MS = 120_000;
+const TIMEOUT_MS = 30_000; // fail-fast per attempt (legit queries are 3–9s); a hang gives up in 30s
+const MAX_BACKOFF_MS = 12_000; // cap 429/5xx Retry-After so throttling can't stall the run for minutes
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
@@ -27,12 +28,18 @@ export async function sodaPage(dataset: string, query: Query): Promise<SodaRow[]
   const cached = readCache(dataset, query);
   if (cached) return cached;
 
+  // Cache-only mode (SODA_CACHE_ONLY=1): never hit the network — a cache miss throws so the caller
+  // skips that parcel (counted as not-extracted). Lets the loop run offline on already-cached data
+  // when SODA is overloaded (503) or rate-limited, instead of grinding on failing calls.
+  if (process.env.SODA_CACHE_ONLY) throw new Error(`cache-miss in SODA_CACHE_ONLY mode (${dataset})`);
+
   const token = process.env.NYC_APP_TOKEN;
   const headers: Record<string, string> = { "User-Agent": "basis-scrape (build-day)" };
   if (token) headers["X-App-Token"] = token;
 
   let lastErr: unknown;
-  for (let attempt = 0; attempt < 5; attempt++) {
+  const MAX_ATTEMPTS = 4;
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     try {
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
@@ -43,8 +50,12 @@ export async function sodaPage(dataset: string, query: Query): Promise<SodaRow[]
         clearTimeout(timer);
       }
       if (res.status === 429 || res.status >= 500) {
+        // Fail-fast: cap the backoff so a throttled/overloaded endpoint can't stall the run for
+        // minutes (a 429 with Retry-After: 120 × 5 retries = 10 min). Capped to MAX_BACKOFF_MS; the
+        // caller skips the parcel (honestly counted as not-extracted) rather than blocking.
         const ra = Number(res.headers.get("retry-after"));
-        await sleep(Number.isFinite(ra) && ra > 0 ? ra * 1000 : 1500 * (attempt + 1));
+        const wait = Math.min(Number.isFinite(ra) && ra > 0 ? ra * 1000 : 1500 * (attempt + 1), MAX_BACKOFF_MS);
+        await sleep(wait);
         lastErr = new Error(`SODA ${res.status} on ${dataset}`);
         continue;
       }
@@ -57,8 +68,8 @@ export async function sodaPage(dataset: string, query: Query): Promise<SodaRow[]
       return rows;
     } catch (e) {
       lastErr = e;
-      if ((e as Error).name === "AbortError" || attempt === 4) break;
-      await sleep(1500 * (attempt + 1));
+      if ((e as Error).name === "AbortError" || attempt === MAX_ATTEMPTS - 1) break;
+      await sleep(Math.min(1500 * (attempt + 1), MAX_BACKOFF_MS));
     }
   }
   throw new Error(`SODA fetch failed for ${dataset} after retries: ${(lastErr as Error)?.message ?? lastErr}`);
