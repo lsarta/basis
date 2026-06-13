@@ -11,7 +11,7 @@
 import { collectSingleParcelAPDeeds, buildPairs, type Pair } from "../scrape/pairs.ts";
 import { extractParcelAllDeeds } from "../scrape/extract.ts";
 import { structuralGate } from "../scrape/gate.ts";
-import { decomposePair, type PairDecomposition } from "./wire.ts";
+import { decomposePair, isSaneLtv, type PairDecomposition } from "./wire.ts";
 import { rateProxy, PROXY } from "./proxies.ts";
 import { debtCost } from "../../prior/engine/types.ts";
 
@@ -32,22 +32,26 @@ async function main(): Promise<void> {
   const hflExit = pairs.filter((p) => p.exitCohort === "higher-for-longer");
   console.log(`${DIM}${hflExit.length} HFL-exit pairs; extracting up to ${maxParcels} parcels to find a clean leveraged one…${X}\n`);
 
+  // A recovered LTV outside [0, 0.95) means the CEMA window attached a loan that isn't this deed's
+  // purchase financing (e.g. a building-level senior on a tiny/nominal-price deed). The loan/price
+  // attribution is unreliable — exclude the comp from the engine rather than feed a bad LTV.
   const candidates: Candidate[] = [];
-  let scanned = 0;
+  let scanned = 0, skipNonArms = 0, skipBadLtv = 0;
   for (const p of hflExit) {
     if (scanned >= maxParcels) break;
     scanned++;
     const rows = await extractParcelAllDeeds(p.bbl);
     const byDoc = new Map(rows.map((r) => [r.document_id, r]));
     const er = byDoc.get(p.entry.document_id), xr = byDoc.get(p.exit.document_id);
-    // both ends must extract as clean arms-length deeds that pass the structural gate
     if (!er || !xr) continue;
-    if (er.classification !== "arms_length_purchase" || xr.classification !== "arms_length_purchase") continue;
-    if (!structuralGate(er).admitted || !structuralGate(xr).admitted) continue;
+    if (er.classification !== "arms_length_purchase" || xr.classification !== "arms_length_purchase") { skipNonArms++; continue; }
+    if (!structuralGate(er).admitted || !structuralGate(xr).admitted) { skipNonArms++; continue; }
     const entryLtv = er.debt.ltv ?? 0, exitLtv = xr.debt.ltv ?? 0;
+    if (!isSaneLtv(entryLtv) || !isSaneLtv(exitLtv)) { skipBadLtv++; continue; } // unreliable loan/price attribution
     const decomp = decomposePair({ price: p.entry.amount, date: p.entry.date, ltv: entryLtv }, { price: p.exit.amount, date: p.exit.date, ltv: exitLtv });
     candidates.push({ pair: p, entryLtv, exitLtv, address: xr.address || er.address, decomp });
   }
+  console.log(`${DIM}scanned ${scanned} parcels: ${candidates.length} decomposable; skipped ${skipNonArms} non-arms/gate, ${skipBadLtv} bad-LTV (loan/price attribution unreliable)${X}`);
 
   // pick the cleanest demo pair: inversion converged (price errors tiny), sane inferred returns,
   // real leverage at the exit (so the debt force is meaningful), prefer a larger move.

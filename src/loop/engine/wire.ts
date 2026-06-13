@@ -57,8 +57,14 @@ export interface PairDecomposition {
 
 const YEAR_MS = 365.25 * 86_400_000;
 
+/** A recovered LTV must be a sane fraction; outside this the loan/price attribution is unreliable. */
+export const isSaneLtv = (ltv: number) => ltv >= 0 && ltv < 0.95;
+
 /** Decompose the price move of one same-BBL deed pair into the three forces, calibrated to real prices. */
 export function decomposePair(entry: DeedEnd, exit: DeedEnd): PairDecomposition {
+  if (!isSaneLtv(entry.ltv) || !isSaneLtv(exit.ltv)) {
+    throw new Error(`decomposePair: LTV out of [0,0.95) (entry ${entry.ltv}, exit ${exit.ltv}) — filter unreliable loan/price attributions before decomposing`);
+  }
   const holdYears = (Date.parse(exit.date) - Date.parse(entry.date)) / YEAR_MS;
 
   // NOI: impute the going-in level from price × cap proxy; grow it over the ACTUAL hold (fundamentals).
