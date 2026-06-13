@@ -40,7 +40,8 @@ export default function Page() {
       <SignalScroll />
 
       <footer>
-        Basis · built at Anthropic Build Day on Claude Opus 4.8 · public records only ·{" "}
+        Basis · built at Claude Build Day, hosted by Anthropic &amp; Cerebral Valley, on
+        Claude Opus 4.8 · public records only ·{" "}
         <a href="https://github.com/lsarta/basis">github.com/lsarta/basis</a>
         <br />
         The decomposition engine is reused prior work (disclosed in <code>src/prior</code>).
