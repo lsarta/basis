@@ -6,3 +6,4 @@ dist/
 *.log
 .DS_Store
 gate1_out/
+session-logs/

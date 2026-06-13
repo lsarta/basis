@@ -6,6 +6,7 @@
   "description": "Basis — a CRE valuation model that learns from public records.",
   "scripts": {
     "grader:selftest": "node src/grader/selftest.ts",
-    "test": "node --test"
+    "test": "node --test",
+    "export-session": "node scripts/export-session.mjs"
   }
 }
