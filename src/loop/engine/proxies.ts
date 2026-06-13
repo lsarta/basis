@@ -30,9 +30,17 @@ export function rateProxy(isoDate: string): number {
 export const PROXY = {
   capRate: 0.05, // going-in cap used to impute NOI = price × capRate (NOI level; split-invariant)
   noiGrowth: 0.03, // per-year NOI growth proxy over the actual hold (the fundamentals driver)
-  creSpread: 0.020, // γ — CRE credit spread over the base rate
+  creSpread: 0.020, // γ — CRE credit spread over the base rate (held CONSTANT → spread force ≈ 0)
   leverageConvexity: 0.010, // d — Pagliari Eq.(1) convexity coefficient (matches the engine neutral)
 } as const;
+
+/**
+ * REF_HURDLE ρ0 — a SINGLE documented reference levered-IRR (market multifamily ~9%), held CONSTANT
+ * across all deals and cohorts. Relative attribution holds ρ at ρ0 (never inverts, never cohort-assigns
+ * it); the required-return force is then a RESIDUAL (observed move − model move), not an input. This is
+ * what keeps the regime story non-circular: ρ is never set by cohort and then "found" to differ by cohort.
+ */
+export const REF_HURDLE = 0.09;
 
 export const RATE_TYPE: RateType = "fixed";
 
