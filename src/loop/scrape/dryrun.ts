@@ -40,8 +40,15 @@ async function main(): Promise<void> {
     console.log(`  ${pad(r.cohort, 18)}${pad(r.bbl || "∅", 12)}${pad(r.classification, 22)}${pad(money(r.price), 16)}${pad(`${money(r.debt.loan_amount)} (${pct(r.debt.ltv)})`, 18)}${DIM}${r.document_id}${X}`);
   }
 
-  // ── CEMA recoveries rendered visibly (naive vs recovered) ──
-  const recoveries = res.admitted.filter((r) => r.recovery_doc_type && (r.debt.loan_amount ?? 0) > 0 && materiallyDiffers(r));
+  // ── CEMA recoveries rendered visibly (naive vs recovered) — one line per recovered senior ──
+  const seenRecovery = new Set<string>();
+  const recoveries = res.admitted.filter((r) => {
+    if (!(r.recovery_doc_type && (r.debt.loan_amount ?? 0) > 0 && materiallyDiffers(r))) return false;
+    const key = r.recovery_source_doc_id ?? r.bbl;
+    if (seenRecovery.has(key)) return false; // dedupe: the deed row and its cema row share one senior
+    seenRecovery.add(key);
+    return true;
+  });
   console.log("\n" + rule());
   console.log(`  ${B}CEMA recoveries${X} ${DIM}(naive recorded-mortgage read vs CEMA-recovered senior)${X}`);
   if (recoveries.length === 0) {
