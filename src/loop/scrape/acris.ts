@@ -63,6 +63,27 @@ export async function documentsOnBbl(bbl: string): Promise<string[]> {
   return [...new Set(legs.map((l) => l.document_id))];
 }
 
+/**
+ * Legals for a set of document_ids (chunked IN-lists), ALL property types. Used by the pairing
+ * census to count a deed's TOTAL distinct BBLs — a deed touching one AP parcel plus non-AP parcels
+ * must be detected as multi-parcel, never as single-BBL. Returns every parcel row, unfiltered.
+ */
+export async function legalsForDocuments(ids: string[], label?: string): Promise<SodaRow[]> {
+  const out: SodaRow[] = [];
+  for (let i = 0; i < ids.length; i += 200) {
+    const chunk = ids.slice(i, i + 200);
+    const got = await sodaPage(LEGALS, {
+      $select: "document_id,borough,block,lot,property_type",
+      $where: `document_id in ${quoteIn(chunk)}`,
+      $limit: 50000,
+    });
+    out.push(...got);
+    if (label) process.stderr.write(`\r  ${label}: ${Math.min(i + 200, ids.length).toLocaleString()}/${ids.length.toLocaleString()} docs…   `);
+  }
+  if (label) process.stderr.write("\n");
+  return out;
+}
+
 /** Master records for a set of document_ids (chunked IN-lists). */
 export async function mastersForDocuments(ids: string[]): Promise<SodaRow[]> {
   const out: SodaRow[] = [];

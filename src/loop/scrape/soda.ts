@@ -86,3 +86,29 @@ export async function paginateAll<T>(pageSize: number, fetchPage: (offset: numbe
 export async function sodaAll(dataset: string, baseQuery: Query, pageSize = PAGE): Promise<SodaRow[]> {
   return paginateAll(pageSize, (offset) => sodaPage(dataset, { ...baseQuery, $limit: pageSize, $offset: offset }));
 }
+
+/**
+ * KEYSET pagination — page by `keyField > lastSeen` instead of $offset. Avoids Socrata's slow/
+ * timeout-prone deep-$offset scans on large filtered pulls (e.g. all AP Legals). The keyField must
+ * be sortable and (near-)unique; ordering by it lets each page use the index. Rows whose duplicate
+ * keys straddle a page boundary are dropped, so use only when callers dedup by key (e.g. into a Set).
+ */
+export async function sodaKeyset(
+  dataset: string,
+  opts: { where: string; select: string; keyField?: string; pageSize?: number; label?: string },
+): Promise<SodaRow[]> {
+  const keyField = opts.keyField ?? "document_id";
+  const pageSize = opts.pageSize ?? 5000;
+  const out: SodaRow[] = [];
+  let last = "";
+  for (let page = 0; ; page++) {
+    const where = last ? `(${opts.where}) AND ${keyField} > '${last.replace(/'/g, "''")}'` : opts.where;
+    const rows = await sodaPage(dataset, { $select: opts.select, $where: where, $order: keyField, $limit: pageSize });
+    out.push(...rows);
+    if (opts.label) process.stderr.write(`\r  ${opts.label}: ${out.length.toLocaleString()} rows…   `);
+    if (rows.length < pageSize) break;
+    last = rows[rows.length - 1][keyField];
+  }
+  if (opts.label) process.stderr.write("\n");
+  return out;
+}
