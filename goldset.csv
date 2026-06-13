@@ -1,0 +1,18 @@
+bbl,document_id,doc_type,true_classification,true_amount,takeout_channel,takeout_lender,amount_reliable,note
+1010340037,2025121200273005,M&CON,cema_consolidation,190000000,,,true,"300 W 44th hero; consolidated senior in SODA document_amt on the M&CON (no OCR); most-recent active-chain consolidation = 190M (parcel also carries a stale 2007 $104M M&CON; answer is 190M, not 104M)"
+1012140106,2025121700383001,AGMT,blanket_not_attributable,,,,false,"169 W 83; blanket AGMT $5,511,152 cross-collateralizes 169 W 83 + 407 E 6th; sibling foils sit on-parcel: M&CON $3,160,000 (doc ...383005) and gap MTGE $240,000 (doc ...383007); correct output = not attributable; any per-parcel dollar = FAIL"
+,2025121500444030,AGMT,cema_consolidation,6556048,,,true,204 Ave A; document_id-keyed (no BBL; scored on amount)
+,2025121700968004,AGMT,cema_consolidation,787500,,,true,627 W 142; document_id-keyed (no BBL; scored on amount)
+,2025123100109002,AGMT,cema_consolidation,5100000,,,true,339 E 19; document_id-keyed (no BBL; scored on amount)
+1010340037,2025121200273001,DEED,arms_length_purchase,218600000,,,true,300 W 44th hero trade; deed shares recording package with the $190M M&CON (same closing); ACRIS=DOF exact
+1003450017,2017071900155001,DEED,arms_length_purchase,61500000,,,true,327-331 E Houston; ACRIS=DOF exact
+1018400010,2021010700693001,DEED,arms_length_purchase,21500000,,,true,63 W 104th; ACRIS=DOF exact
+4005830001,2024032900532002,DEED,arms_length_purchase,13262500,,,true,34-50 28th; ACRIS=DOF exact
+1016550001,2023082300971001,DEED,arms_length_purchase,5600000,,,true,1905 Third; ACRIS=DOF exact
+1004850016,2025120401159003,AGMT,takeout_regional_bank,9000000,regional-bank balance sheet,"WEBSTER BANK, NATIONAL ASSOCIATION",true,120 Spring St; demo takeout (named bank + reliable amount)
+3010300043,2026031300594005,AGMT,takeout_regional_bank,,regional-bank balance sheet,PEAPACK PRIVATE BANK & TRUST,false,226 & 400 7th Ave; multi-parcel takeout (amount not attributable)
+3017150029,2024111900621001,AGMT,takeout_new_securitization,7500000,new-securitization,"WILMINGTON TRUST, NATIONAL ASSOCIATION, AS TRUSTEE",true,"735 Bedford Ave; trustee = securitization channel, not a regional bank"
+1008130050,2016122701566007,MTGE,still_outstanding,,,,false,"1384 Broadway; pari-passu split note $34,019,709 of an $88M whole loan; no clean-single number"
+1006460019,2021010400526002,MTGE,commitment_not_funded,,,,false,860 Washington; $116M recorded commitment vs $80M deed price; do not treat commitment as funded balance
+2040310003,2022052600473001,DEED,coop_unit_deed,,,,false,"2420 Morris Ave; coop unit deed, not a building-level arms-length price"
+3001770034,2022022201575001,DEED,non_arms_length,,,,false,399 Atlantic; Piscione Family LP disposition (estate/family); price not market
